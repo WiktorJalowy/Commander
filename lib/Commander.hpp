@@ -9,8 +9,6 @@ public:
     std::vector<std::string> GiveOrders(std::string map, std::string status);
     
 private:
-    void ShouldBuildWorker();
-    void ShouldBuildKnight(int checker);
     void BuildUnit(std::string unit);
 
     std::pair<int, int> GetEnemyBase();

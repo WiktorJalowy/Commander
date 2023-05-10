@@ -1,5 +1,6 @@
 #include "Commander.hpp"
 #include <fstream>
+#include <iostream>
 
 std::vector<std::string> Commander::GiveOrders(std::string map, std::string status)
 {
@@ -31,7 +32,7 @@ std::vector<std::string> Commander::GiveOrders(std::string map, std::string stat
             line = line.substr(line.find(" ") + 1);
             if(stat.type == "B")
             {
-                stat.production = line;
+                stat.production = line[0];
                 production = stat.production;
             }
             if(stat.affiliation == "E")
@@ -67,12 +68,26 @@ std::vector<std::string> Commander::GiveOrders(std::string map, std::string stat
     //first deciding what unit to build
     if(mineIsOnTheMap)
     {
-        ShouldBuildKnight(0);
-        ShouldBuildWorker();
+        if(CheckNumOfUnit("K") < 3)
+        {
+            BuildUnit("K");
+            gold -= 400;
+        }
+        else if(CheckNumOfUnit("K") == 3 && CheckNumOfUnit("W") < 2)
+        {
+            BuildUnit("W");
+            gold -= 100;
+        }
+        else if(CheckNumOfUnit("W") == 2)
+        {
+            BuildUnit("K");
+            gold -= 400;
+        }
     }
     else
     {
-        ShouldBuildKnight(1);
+        BuildUnit("K");
+        gold -= 400;
     }
 
     //second ordering worker to move to a mine
@@ -108,41 +123,13 @@ std::vector<std::string> Commander::GiveOrders(std::string map, std::string stat
     return orders;
 }
 
-void Commander::ShouldBuildWorker()
-{
-    if(CheckNumOfUnit("W") < 2 && gold >= 100)
-    {
-        BuildUnit("W");
-        gold -= 100;
-    }
-}
-
-void Commander::ShouldBuildKnight(int checker)
-{
-    if(CheckNumOfUnit("K") < 3 && gold >= 400)
-    {
-        BuildUnit("K");
-        gold -= 400;
-    }
-    else if(CheckNumOfUnit("W") == 2 && checker == 0 && gold >= 400)
-    {
-        BuildUnit("K");
-        gold -= 400;
-    }
-    else if(checker == 1 && gold >= 400)
-    {
-        BuildUnit("K");
-        gold -= 400;
-    }
-}
-
 void Commander::BuildUnit(std::string unit)
 {
     std::string order;
 
     for(int i = 0; i < playerUnits.size(); i++)
     {
-        if(playerUnits[i].type == "B")
+        if(playerUnits[i].type == "B" && playerUnits[i].production == "0")
         {
             order = std::to_string(playerUnits[i].id);
             order += " B ";
@@ -219,7 +206,7 @@ void Commander::GiveOrderToAttack(int attacker, int defender)
             defenderY = enemyUnits[i].y;
         }
     }
-    if(abs((attackerX - defenderX) + (attackerY - defenderY)) == 1)
+    if(abs((attackerX - defenderX) <= 1 &&  abs((attackerY - defenderY)) <= 1))
     {
         orders.push_back(order);
     }
