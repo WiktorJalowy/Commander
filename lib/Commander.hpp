@@ -25,8 +25,9 @@ private:
     std::vector<Status> playerUnits;
     
     Map board;
-    int mineX = -1;
-    int mineY = -1;
+    int mineX;
+    int mineY;
+    bool firstmine = true;
     int gold = 0;
     std::string production = "0";
 };

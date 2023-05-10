@@ -1,6 +1,5 @@
 #include "Commander.hpp"
 #include <fstream>
-#include <iostream>
 
 std::vector<std::string> Commander::GiveOrders(std::string map, std::string status)
 {
@@ -11,7 +10,7 @@ std::vector<std::string> Commander::GiveOrders(std::string map, std::string stat
     bool mineIsOnTheMap = false;
     int helper = 0;
 
-    //gets information from status file
+    //gets information from status file and pushing it to different vectors, one vector for player units and one for enemy units
     file.open(status);
     while(getline(file, line))
     {
@@ -59,13 +58,13 @@ std::vector<std::string> Commander::GiveOrders(std::string map, std::string stat
         if(board.GetMap()[i].find("6") != std::string::npos)
         {
             mineIsOnTheMap = true;
-            x = board.GetMap()[i].find("6");
+            x = (board.GetMap()[i].find("6") / 2);
             y = i;
             GetClosestMine(x, y);
         }
     }
 
-    //first deciding what unit to build
+    //first deciding what unit to build, prioritizing building Knights over Workers for first turns
     if(mineIsOnTheMap)
     {
         if(CheckNumOfUnit("K") < 3)
@@ -90,7 +89,7 @@ std::vector<std::string> Commander::GiveOrders(std::string map, std::string stat
         gold -= 400;
     }
 
-    //second ordering worker to move to a mine
+    //second ordering workers to move to a mine
     if(CheckNumOfUnit("W") > 0)
     {
         std::string str;
@@ -123,7 +122,7 @@ std::vector<std::string> Commander::GiveOrders(std::string map, std::string stat
     return orders;
 }
 
-void Commander::BuildUnit(std::string unit)
+void Commander::BuildUnit(std::string unit) //creating order to build unit type passed by argument
 {
     std::string order;
 
@@ -140,7 +139,7 @@ void Commander::BuildUnit(std::string unit)
     }
 }
 
-int Commander::CheckNumOfUnit(std::string unit)
+int Commander::CheckNumOfUnit(std::string unit) //simple check for quantity of units by type
 {
     int numOfUnits = 0;
     for(int i = 0; i < playerUnits.size(); i++)
@@ -168,10 +167,11 @@ void Commander::GetClosestMine(int x, int y) //calculates the distance between m
         }
     }
 
-    if(mineX == -1 && mineY == -1)
+    if(firstmine)
     {
         mineX = x;
         mineY = y;
+        firstmine = false;
     }
     else if(abs(((mineX - baseX) + (mineY - baseY))) > abs(((x - baseX) + (y - baseY))))
     {
@@ -180,16 +180,16 @@ void Commander::GetClosestMine(int x, int y) //calculates the distance between m
     }
 }
 
-void Commander::GiveOrderToAttack(int attacker, int defender)
+void Commander::GiveOrderToAttack(int attacker, int defender) // Order to attack checks if attack can be done and if yes it pushes it to orders vector
 {
     std::string order;
     order = std::to_string(attacker);
     order += " A ";
     order += std::to_string(defender);
-    int attackerX = -1;
-    int attackerY = -1;
-    int defenderX = -1;
-    int defenderY = -1;
+    int attackerX;
+    int attackerY;
+    int defenderX;
+    int defenderY;
     for(int i = 0; i < playerUnits.size(); i++)
     {
         if(playerUnits[i].id == attacker)
@@ -206,21 +206,22 @@ void Commander::GiveOrderToAttack(int attacker, int defender)
             defenderY = enemyUnits[i].y;
         }
     }
-    if(abs((attackerX - defenderX) <= 1 &&  abs((attackerY - defenderY)) <= 1))
+    if((abs((attackerX - defenderX) + abs((attackerY - defenderY)))) == 1)
     {
         orders.push_back(order);
     }
 }
 
-void Commander::GiveOrderToMove(int unitID, int destinationX, int destinationY)
+void Commander::GiveOrderToMove(int unitID, int destinationX, int destinationY) // this order decides on many things
 {
-    int id = -1;
+    int id;
     std::string order;
-    int x = -1;
-    int y = -1;
-    std::string aff;
+    int x;
+    int y;
+    std::string type;
     int remainingSpeed = 0;
     int distance = 0;
+    // first of all simple loop to calculate speed of unit and get it most important things out of playerUnits vector
     for(int i = 0; i < playerUnits.size(); i++)
     {
         if(unitID == playerUnits[i].id)
@@ -228,224 +229,95 @@ void Commander::GiveOrderToMove(int unitID, int destinationX, int destinationY)
             id = playerUnits[i].id;
             x = playerUnits[i].x;
             y = playerUnits[i].y;
-            aff = playerUnits[i].affiliation;
-            break;
-        }
-    }
-    distance = abs((x - destinationX) + (y - destinationY));
-    if(aff == "K")
-    {
-        remainingSpeed = 5;
-        if(distance <= 5)
-        {
-            x = destinationX;
-            y = destinationY;
-            if(y > 0 && board.GetMap()[y - 1][x] != '9')
+            type = playerUnits[i].type;
+            if(playerUnits[i].type == "K")
             {
-                y--;
-            }
-            else if(y == 0 && board.GetMap()[y + 1][x] != '9')
-            {
-                y++;
-            }
-            else if(x == 0 && board.GetMap()[y][x + 1] != '9')
-            {
-                x++;
+                remainingSpeed = 5;
             }
             else
             {
-                x--;
+                remainingSpeed = 2;
             }
-        }
-        if(x != destinationX && abs((x - destinationX)) > distance)
-        {
-            for(int i = 0; i < 5; i++)
-            {
-                if(destinationX > x)
-                {
-                    if(CheckIfFieldIsFree((x + remainingSpeed), y))
-                    {
-                        x += remainingSpeed;
-                        remainingSpeed -= i; 
-                        break;
-                    }
-                    else
-                    {
-                        x--;
-                    }
-                }
-                else if(destinationX < x)
-                {
-                    if(CheckIfFieldIsFree((x - remainingSpeed), y))
-                    {
-                        x -= remainingSpeed;
-                        remainingSpeed -= i; 
-                        break;
-                    }
-                    else
-                    {
-                        x++;
-                    }
-                }
-                else if(i == 4 && destinationX < x)
-                {
-                    x -= 5;
-                    break;
-                }
-                else if(i == 4 && destinationX > x)
-                {
-                    x += 5;
-                    break;
-                }
-            }
-        }
-        if(y != destinationY && abs((y - destinationY)) > distance)
-        {
-            for(int i = 0; i < 5; i++)
-            {
-                if(destinationY > y)
-                {
-                    if(CheckIfFieldIsFree(x, (y - remainingSpeed)))
-                    {
-                        y += remainingSpeed;
-                        remainingSpeed -= i; 
-                        break;
-                    }
-                    else
-                    {
-                        y--;
-                    }
-                }
-                if(destinationY < y)
-                {
-                    if(CheckIfFieldIsFree(x, (y + remainingSpeed)))
-                    {
-                        y -= remainingSpeed;
-                        remainingSpeed -= i; 
-                        break;
-                    }
-                    else
-                    {
-                        y++;
-                    }
-                }
-                else if(i == 4 && destinationY < y)
-                {
-                    y -= 5;
-                    break;
-                }
-                else if(i == 4 && destinationY > y)
-                {
-                    y += 5;
-                    break;
-                }
-            }
+            break;
         }
     }
-    if(aff == "W")
+    // calculating distance
+    distance = abs((x - destinationX) + (y - destinationY));
+
+    if(type == "W")
     {
-        remainingSpeed = 2;
+        //first if is for checking if the unit can move straight to the point
         if(distance <= 2)
         {
             x = destinationX;
             y = destinationY;
-            if(y > 0 && board.GetMap()[y - 1][x] != '9')
+            remainingSpeed = 0;
+        }
+        // if destination is not reachable instantly, it first moves on X axis and check if it is available to stand on to travel as much distance as possible
+        for(int i = remainingSpeed; i > 0; i--)
+        {
+            if((x + i) > destinationX) { continue; }
+            if(CheckIfFieldIsFree(x + i, y))
             {
-                y--;
-            }
-            else if(y == 0 && board.GetMap()[y + 1][x] != '9')
-            {
-                y++;
-            }
-            else if(x == 0 && board.GetMap()[y][x + 1] != '9')
-            {
-                x++;
-            }
-            else
-            {
-                x--;
+                x += i;
+                remainingSpeed -= i;
+                break;
             }
         }
-        if(x != destinationX && abs((x - destinationX)) > distance)
+        // this time Y axis if any speed remains it checks if it can move and stand to travel as much distance as possible
+        for(int i = remainingSpeed; i > 0; i--)
         {
-            for(int i = 0; i < 2; i++)
+            if((y + i) > destinationX) { continue; }
+            if(CheckIfFieldIsFree(x, y + i))
             {
-                if(destinationX > x)
+                y += i;
+                remainingSpeed -= i;
+                break;
+            }
+        }
+    }
+    else if(type == "K")
+    {
+        if(distance <= 6)
+        {
+            x = destinationX;
+            y = destinationY;
+            remainingSpeed = 0;
+        }
+        if(distance <= 6)
+        {
+            if(destinationX > 0)
+            {
+                x = destinationX - 1;
+            }
+            else if(destinationY > 0)
+            {
+                y = destinationY - 1;
+            }
+            else if(destinationY == 0 && destinationX == 0)
+            {
+                x = destinationX + 1;
+            }
+        }
+        else
+        {
+            for(int i = remainingSpeed; i > 0; i--)
+            {
+                if((x + i) > destinationX) { continue; }
+                if(CheckIfFieldIsFree(x + i, y))
                 {
-                    if(CheckIfFieldIsFree((x + remainingSpeed), y))
-                    {
-                        x += remainingSpeed;
-                        remainingSpeed -= i; 
-                        break;
-                    }
-                    else
-                    {
-                        x--;
-                    }
-                }
-                else if(destinationX < x)
-                {
-                    if(CheckIfFieldIsFree((x - remainingSpeed), y))
-                    {
-                        x -= remainingSpeed;
-                        remainingSpeed -= i; 
-                        break;
-                    }
-                    else
-                    {
-                        x++;
-                    }
-                }
-                else if(i == 1 && destinationX < x)
-                {
-                    x -= 2;
-                    break;
-                }
-                else if(i == 1 && destinationX > x)
-                {
-                    x += 2;
+                    x += i;
+                    remainingSpeed -= i;
                     break;
                 }
             }
-        }
-        if(y != destinationY && abs((y - destinationY)) > distance)
-        {
-            for(int i = 0; i < 5; i++)
+            for(int i = remainingSpeed; i > 0; i--)
             {
-                if(destinationY > y)
+                if((y + i) > destinationX) { continue; }
+                if(CheckIfFieldIsFree(x, y + i))
                 {
-                    if(CheckIfFieldIsFree(x, (y + remainingSpeed)))
-                    {
-                        y += remainingSpeed;
-                        remainingSpeed -= i; 
-                        break;
-                    }
-                    else
-                    {
-                        y--;
-                    }
-                }
-                if(destinationY < y)
-                {
-                    if(CheckIfFieldIsFree(x, (y + remainingSpeed)))
-                    {
-                        y -= remainingSpeed;
-                        remainingSpeed -= i; 
-                        break;
-                    }
-                    else
-                    {
-                        y++;
-                    }
-                }
-                else if(i == 4 && destinationY < y)
-                {
-                    y -= 5;
-                    break;
-                }
-                else if(i == 4 && destinationY > y)
-                {
-                    y += 5;
+                    y += i;
+                    remainingSpeed -= i;
                     break;
                 }
             }
@@ -459,21 +331,21 @@ void Commander::GiveOrderToMove(int unitID, int destinationX, int destinationY)
     orders.push_back(order);
 }
 
-bool Commander::CheckIfFieldIsFree(int x , int y)
+bool Commander::CheckIfFieldIsFree(int x , int y) // method for checking if field on coordinates is not an obstacle or enemy occupies it
 {
-    if(board.GetMap()[y][x] != '9')
+    for(int i = 0; i < enemyUnits.size(); i++)
     {
-        return true;
-    } 
-    else
-    {
-        return false;
+        if(board.GetMap()[y][x * 2] != '9' && board.GetMap()[y].size() > x && board.GetMap().size() > y && enemyUnits[i].x != x && enemyUnits[i].y != y)
+        {
+            return true;
+        }
     }
+    return false;
 }
 
-std::pair<int, int> Commander::GetEnemyBase()
+std::pair<int, int> Commander::GetEnemyBase() // simple method for getting coordinates of enemy base
 {
-    std::pair<int, int> cords(-1, -1);
+    std::pair<int, int> cords;
     for(int i = 0; i < enemyUnits.size(); i++)
     {
         if(enemyUnits[i].type == "B")
@@ -486,7 +358,7 @@ std::pair<int, int> Commander::GetEnemyBase()
     return cords;
 }
 
-int Commander::GetEnemyBaseID()
+int Commander::GetEnemyBaseID() // simple method for getting id of enemy base
 {
     int base;
     for(int i = 0; i < enemyUnits.size(); i++)
