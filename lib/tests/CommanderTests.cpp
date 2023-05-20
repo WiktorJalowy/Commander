@@ -4,44 +4,58 @@
 TEST(CommmanderTests, ShouldMoveToFieldNextToEnemyBase)
 {
     Commander commander;
-    commander.GiveOrders(std::stringstream("00000 00009 00000"), std::stringstream("400 P B 0 0 0 200 0 E B 1 2 2 200 A P K 2 0 0 80"));
-    std::string str = commander.GetElement(1);
-    EXPECT_EQ(str[4], '1');
-    EXPECT_EQ(str[6], '2');
+    const std::string map = "00000 00009 00000";
+    const std::string status = "400 P B 0 0 0 200 0 E B 1 2 2 200 A P K 2 0 0 80";
+
+    commander.GiveOrders(std::stringstream(map), std::stringstream(status));
+    std::string orderToCheck = commander.GetElement(1);
+    EXPECT_EQ(orderToCheck[4], '1');
+    EXPECT_EQ(orderToCheck[6], '2');
 }
 
 TEST(CommmanderTests, ShouldMoveToFieldAboveEnemyBase)
 {
     Commander commander;
-    commander.GiveOrders(std::stringstream("00000 00009 09000"), std::stringstream("400 P B 0 0 0 200 0 E B 1 2 2 200 A P K 2 0 0 80"));
-    std::string str = commander.GetElement(1);
-    EXPECT_EQ(str[4], '2');
-    EXPECT_EQ(str[6], '1');
+    const std::string map = "00000 00009 09000";
+    const std::string status = "400 P B 0 0 0 200 0 E B 1 2 2 200 A P K 2 0 0 80";
+
+    commander.GiveOrders(std::stringstream(map), std::stringstream(status));
+    std::string orderToCheck = commander.GetElement(1);
+    EXPECT_EQ(orderToCheck[4], '2');
+    EXPECT_EQ(orderToCheck[6], '1');
 }
 
 TEST(CommmanderTests, ShouldMoveToFieldWithoutStandingOnOccupiedField)
 {
     Commander commander;
-    commander.GiveOrders(std::stringstream("00000 00009 00000"), std::stringstream("400 P B 0 0 0 200 0 E B 1 4 2 200 A P K 2 0 0 80"));
-    std::string str = commander.GetElement(1);
-    EXPECT_EQ(str[4], '4');
-    EXPECT_EQ(str[6], '0');
+    const std::string map = "00000 00009 00000";
+    const std::string status = "400 P B 0 0 0 200 0 E B 1 4 2 200 A P K 2 0 0 80";
+
+    commander.GiveOrders(std::stringstream(map), std::stringstream(status));
+    std::string orderToCheck = commander.GetElement(1);
+    EXPECT_EQ(orderToCheck[4], '4');
+    EXPECT_EQ(orderToCheck[6], '0');
 }
 
 TEST(CommmanderTests, ShouldMoveToMine)
 {
     Commander commander;
-    commander.GiveOrders(std::stringstream("00600 00009 00000"), std::stringstream("400 P B 0 0 0 200 0 E B 1 4 2 200 A P W 2 0 0 80"));
-    std::string str = commander.GetElement(1);
-    EXPECT_EQ(str[4], '2');
-    EXPECT_EQ(str[6], '0');
+    const std::string map = "00600 00009 00000";
+    const std::string status = "400 P B 0 0 0 200 0 E B 1 4 2 200 A P W 2 0 0 80";
+
+    commander.GiveOrders(std::stringstream(map), std::stringstream(status));
+    std::string orderToCheck = commander.GetElement(1);
+    EXPECT_EQ(orderToCheck[4], '2');
+    EXPECT_EQ(orderToCheck[6], '0');
 }
 
 TEST(CommmanderTests, ShouldMoveToTheClosestFieldToMine)
 {
     Commander commander;
-    commander.GiveOrders(std::stringstream("00960 00009 00000"), std::stringstream("400 P B 0 0 0 200 0 E B 1 4 2 200 A P W 2 0 0 80"));
-    std::string str = commander.GetElement(1);
-    EXPECT_EQ(str[4], '1');
-    EXPECT_EQ(str[6], '1');
+    const std::string map = "00960 00009 00000";
+    const std::string status = "400 P B 0 0 0 200 0 E B 1 4 2 200 A P W 2 0 0 80";
+    commander.GiveOrders(std::stringstream(map), std::stringstream(status));
+    std::string orderToCheck = commander.GetElement(1);
+    EXPECT_EQ(orderToCheck[4], '1');
+    EXPECT_EQ(orderToCheck[6], '1');
 }
