@@ -1,52 +1,127 @@
 #include "Commander.hpp"
 #include <fstream>
 
-std::vector<std::string> Commander::GiveOrders(std::string map, std::string status)
+std::vector<std::string> Commander::GiveOrders(std::stringstream map, std::stringstream status)
 {
     board.SetMap(map);
     orders.clear();
     std::fstream file;
     std::string line;
+    std::string iffile;
+    status >> iffile;
     bool mineIsOnTheMap = false;
     int helper = 0;
 
-    //gets information from status file and pushing it to different vectors, one vector for player units and one for enemy units
-    file.open(status);
-    while(getline(file, line))
+    //gets information from status file and pushing it to different vectors, one vector for player units and one for enemy units, if not a file it reads from a sstream
+    file.open(iffile);
+    if(file.is_open())
     {
-        if(helper > 0)
+        while(getline(file, line))
         {
-            Status stat;
-            stat.affiliation = line[0];
-            line = line.substr(2);
-            stat.type = line[0];
-            line = line.substr(2);
-            stat.id = stoi(line.substr(0, line.find(" ")));
-            line = line.substr(line.find(" ") + 1);
-            stat.x = stoi(line.substr(0, line.find(" ")));
-            line = line.substr(line.find(" ") + 1);
-            stat.y = stoi(line.substr(0, line.find(" ")));
-            line = line.substr(line.find(" ") + 1);
-            stat.hitpoints = stoi(line.substr(0, line.find(" ")));
-            line = line.substr(line.find(" ") + 1);
-            if(stat.type == "B")
+            if(helper > 0)
             {
-                stat.production = line[0];
-                production = stat.production;
+                Status stat;
+                stat.affiliation = line[0];
+                line = line.substr(2);
+                stat.type = line[0];
+                line = line.substr(2);
+                stat.id = stoi(line.substr(0, line.find(" ")));
+                line = line.substr(line.find(" ") + 1);
+                stat.x = stoi(line.substr(0, line.find(" ")));
+                line = line.substr(line.find(" ") + 1);
+                stat.y = stoi(line.substr(0, line.find(" ")));
+                line = line.substr(line.find(" ") + 1);
+                stat.hitpoints = stoi(line.substr(0, line.find(" ")));
+                line = line.substr(line.find(" ") + 1);
+                if(stat.type == "B")
+                {
+                    stat.production = line[0];
+                    production = stat.production;
+                }
+                if(stat.affiliation == "E")
+                {
+                    enemyUnits.push_back(stat);
+                }
+                else if(stat.affiliation == "P")
+                {
+                    playerUnits.push_back(stat);
+                }
             }
-            if(stat.affiliation == "E")
+            else
             {
-                enemyUnits.push_back(stat);
-            }
-            else if(stat.affiliation == "P")
-            {
-                playerUnits.push_back(stat);
+                gold = stoi(line.substr(0, line.find("\n")));
+                helper++;
             }
         }
-        else
+    }
+    else
+    {
+        gold = stoi(iffile);
+        std::string unit;
+        while(status >> line)
         {
-            gold = stoi(line.substr(0, line.find("\n")));
-            helper++;
+            unit += line;
+            unit += " ";
+            if(((line == "P" || line == "E") && unit.size() > 4))
+            {
+                Status stat;
+                stat.affiliation = unit[0];
+                unit = unit.substr(2);
+                stat.type = unit[0];
+                unit = unit.substr(2);
+                stat.id = stoi(unit.substr(0, unit.find(" ")));
+                unit = unit.substr(unit.find(" ") + 1);
+                stat.x = stoi(unit.substr(0, unit.find(" ")));
+                unit = unit.substr(unit.find(" ") + 1);
+                stat.y = stoi(unit.substr(0, unit.find(" ")));
+                unit = unit.substr(unit.find(" ") + 1);
+                stat.hitpoints = stoi(unit.substr(0, unit.find(" ")));
+                unit = unit.substr(unit.find(" ") + 1);
+
+                if(stat.type == "B")
+                {
+                    stat.production = unit[0];
+                    production = stat.production;
+                    unit = unit.substr(2);
+                }
+                if(stat.affiliation == "E")
+                {
+                    enemyUnits.push_back(stat);
+                }
+                else if(stat.affiliation == "P")
+                {
+                    playerUnits.push_back(stat);
+                }
+            }
+        }
+
+        Status stat;
+        stat.affiliation = unit[0];
+        unit = unit.substr(2);
+        stat.type = unit[0];
+        unit = unit.substr(2);
+        stat.id = stoi(unit.substr(0, unit.find(" ")));
+        unit = unit.substr(unit.find(" ") + 1);
+        stat.x = stoi(unit.substr(0, unit.find(" ")));
+        unit = unit.substr(unit.find(" ") + 1);
+        stat.y = stoi(unit.substr(0, unit.find(" ")));
+        unit = unit.substr(unit.find(" ") + 1);
+        stat.hitpoints = stoi(unit.substr(0, unit.find(" ")));
+        unit = unit.substr(unit.find(" ") + 1);
+
+        if(stat.type == "B")
+        {
+            stat.production = unit[0];
+            production = stat.production;
+            unit = unit.substr(2);
+        }
+        if(stat.affiliation == "E")
+        {
+            enemyUnits.push_back(stat);
+        }
+        else if(stat.affiliation == "P")
+        {
+            playerUnits.push_back(stat);
         }
     }
 
@@ -58,7 +133,7 @@ std::vector<std::string> Commander::GiveOrders(std::string map, std::string stat
         if(board.GetMap()[i].find("6") != std::string::npos)
         {
             mineIsOnTheMap = true;
-            x = (board.GetMap()[i].find("6") / 2);
+            x = (board.GetMap()[i].find("6"));
             y = i;
             GetClosestMine(x, y);
         }
@@ -67,17 +142,22 @@ std::vector<std::string> Commander::GiveOrders(std::string map, std::string stat
     //first deciding what unit to build, prioritizing building Knights over Workers for first turns
     if(mineIsOnTheMap)
     {
-        if(CheckNumOfUnit("K") < 3)
-        {
-            BuildUnit("K");
-            gold -= 400;
-        }
-        else if(CheckNumOfUnit("K") == 3 && CheckNumOfUnit("W") < 2)
+        if(CheckNumOfUnit("W") < 2 && gold < 400)
         {
             BuildUnit("W");
             gold -= 100;
         }
-        else if(CheckNumOfUnit("W") == 2)
+        if(CheckNumOfUnit("K") < 3 && gold >= 400)
+        {
+            BuildUnit("K");
+            gold -= 400;
+        }
+        else if(CheckNumOfUnit("K") == 3 && CheckNumOfUnit("W") < 2 && gold >= 100)
+        {
+            BuildUnit("W");
+            gold -= 100;
+        }
+        else if(CheckNumOfUnit("W") == 2 && gold >= 400)
         {
             BuildUnit("K");
             gold -= 400;
@@ -278,31 +358,35 @@ void Commander::GiveOrderToMove(int unitID, int destinationX, int destinationY) 
     }
     else if(type == "K")
     {
-        if(distance <= 6)
+        if(distance <= 5)
         {
             x = destinationX;
             y = destinationY;
             remainingSpeed = 0;
         }
-        if(distance <= 6)
+        if(distance <= 5)
         {
-            if(destinationX > 0)
+            if(destinationX > 0 && CheckIfFieldIsFree(x - 1, y))
             {
                 x = destinationX - 1;
             }
-            else if(destinationY > 0)
+            else if(destinationY > 0 && CheckIfFieldIsFree(x, y - 1))
             {
                 y = destinationY - 1;
             }
-            else if(destinationY == 0 && destinationX == 0)
+            if(destinationY == 0 && destinationX == 0 && CheckIfFieldIsFree(destinationX + 1, destinationY))
             {
                 x = destinationX + 1;
+            }
+            else if(destinationY == 0 && destinationX == 0 && CheckIfFieldIsFree(destinationX, destinationY + 1))
+            {
+                y = destinationY + 1;
             }
         }
         else
         {
             for(int i = remainingSpeed; i > 0; i--)
-            {
+            {    
                 if((x + i) > destinationX) { continue; }
                 if(CheckIfFieldIsFree(x + i, y))
                 {
@@ -335,8 +419,12 @@ bool Commander::CheckIfFieldIsFree(int x , int y) // method for checking if fiel
 {
     for(int i = 0; i < enemyUnits.size(); i++)
     {
-        if(board.GetMap()[y][x * 2] != '9' && board.GetMap()[y].size() > x && board.GetMap().size() > y && enemyUnits[i].x != x && enemyUnits[i].y != y)
+        if(board.GetMap()[y][x] != '9' && board.GetMap()[y].size() > x && board.GetMap().size() > y)
         {
+            if(enemyUnits[i].x == x && enemyUnits[i].y == y)
+            {
+                return false;
+            }
             return true;
         }
     }
@@ -369,4 +457,9 @@ int Commander::GetEnemyBaseID() // simple method for getting id of enemy base
         }
     }
     return base;
+}
+
+std::string Commander::GetElement(int element)
+{
+    return orders[element];
 }

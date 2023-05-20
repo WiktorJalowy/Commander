@@ -6,8 +6,8 @@
 class Commander
 {
 public:
-    std::vector<std::string> GiveOrders(std::string map, std::string status);
-    
+    std::vector<std::string> GiveOrders(std::stringstream map, std::stringstream status);
+    std::string GetElement(int element);
 private:
     void BuildUnit(std::string unit);
 
